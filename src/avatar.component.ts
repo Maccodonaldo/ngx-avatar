@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ViewChild, Output, EventEmitter,Renderer2 ,ElementRef } from '@angular/core';
 import { Http } from "@angular/http";
 import { Source } from "./sources/source";
 import { Facebook } from "./sources/facebook";
@@ -30,7 +30,9 @@ import { Md5 } from "ts-md5/dist/md5";
   }
   `],
   template: `
-    <div  [ngStyle]="hostStyle">
+    <div
+       #avatar  
+       [ngStyle]="hostStyle">
     <img *ngIf="src"
       [src]="src"
       [width]="size"
@@ -43,8 +45,7 @@ import { Md5 } from "ts-md5/dist/md5";
      [ngStyle]="avatarStyle">{{data}}</div>
    </div>`
 })
-export class AvatarComponent implements OnInit {
-
+export class AvatarComponent implements OnInit, OnDestroy {
   @Input() round: boolean = true;
   @Input() size: number = 50;
   @Input() textSizeRatio: number = 3;
@@ -52,6 +53,10 @@ export class AvatarComponent implements OnInit {
   @Input() fgColor: string = "#FFF";
   @Input() borderColor: string;
   @Input() style: any = {};
+  
+  @ViewChild('avatar') avatar: ElementRef;
+  @Output() avatarClicked = new EventEmitter();
+  listen: Function;
 
   _currentSource: number = 0;
   _sources: Source[] = Array();
@@ -63,7 +68,8 @@ export class AvatarComponent implements OnInit {
   avatarStyle: any = {}
   hostStyle: any = {};
 
-  constructor(public http: Http) {
+  constructor(public http: Http, private renderer: Renderer2) {
+    this.handleClickEvent();
   }
 
   /**
@@ -207,6 +213,17 @@ export class AvatarComponent implements OnInit {
          this.src = avatarSrc.replace('s64', 's' + this.size);;
       }
     });
+  } 
+
+  handleClickEvent(){
+    this.listen =  this.renderer.listen(this.avatar.nativeElement, 'click', ($event) =>{
+      this.avatarClicked.emit($event)
+    })
+  }
+
+  ngOnDestroy(){
+    // Removes listener
+    this.listen();  
   }
 
 }
